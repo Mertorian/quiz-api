@@ -79,7 +79,7 @@ app.post("/quiz", (req, res) => {
       correctAnswer,
     };
     quizQuestions.push(newQuestion);
-    res.json({ message: `create new Question with ID: ${newId}` });
+    res.json({ message: "create new Question", newQuestion });
   }
 });
 
