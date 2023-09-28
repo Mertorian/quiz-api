@@ -1,40 +1,46 @@
 const express = require("express");
+const fs = require("fs");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
+const cors = require("cors");
+const quizQuestions = require("./quizQuestions");
+
 const app = express();
 
-const port = 3000;
+app.use(cors());
 
-const quizQuestions = [
-  {
-    id: "01c565a7-c600-46f5-9041-3c64915d933e",
-    question: "What's the Lords name from Shrek?",
-    answers: ["Ralf", "Frederick", "Farquaad", "Fransquad"],
-    correctAnswer: 2,
-  },
-  {
-    id: "f363c671-e1fc-4f70-875d-c07fa4bb5784",
-    question: "What kind of fruit does Shrek compare himself to?",
-    answers: ["apple", "onion", "orange", "pencil"],
-    correctAnswer: 1,
-  },
-  {
-    id: "634d51b8-5f27-4ce0-944a-dd6216065231",
-    question: "what Animal is donkeys wife?",
-    answers: ["donkey", "cat", "dragon", "lizard"],
-    correctAnswer: 2,
-  },
-];
+const localhost = "http://localhost:";
+const port = 3000;
+const highscores = [];
 
 app.use(bodyParser.json());
 
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to the Quiz API" });
+app.get("/highscores", (req, res) => {
+  res.json(highscores);
 });
 
-app.get("/quiz", (req, res) => {
-  const noAnswer = quizQuestions.map(({ correctAnswer, ...rest }) => rest);
-  res.json({ quizQuestions: noAnswer });
+app.post("/highscores", (req, res) => {
+  const { name, score } = req.body;
+
+  if (!name || !score) {
+    return res.status(400).json({ error: "Name and Score are required!" });
+  }
+  const newHighscore = { name, score };
+
+  highscores.push(newHighscore);
+
+  highscores.sort((a, b) => b.score - a.score);
+
+  highscores = highscores.slice(0, 10);
+
+  res.json(highscores);
+});
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "Welcome to the Quiz API",
+    info: "type in /quiz/ to see questions",
+  });
 });
 
 app.get("/quiz/:quizId", (req, res) => {
@@ -83,6 +89,20 @@ app.post("/quiz", (req, res) => {
   }
 });
 
+app.get("/quiz", (req, res) => {
+  const noAnswer = quizQuestions.map(({ correctAnswer, ...rest }) => rest);
+  randomArray(noAnswer);
+  const selectedQuestions = noAnswer.slice(0, 5);
+  res.json(selectedQuestions);
+});
+
+function randomArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i - 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
 app.listen(port, () => {
-  console.log(`server running @ ${port}`);
+  console.log(`server running @ ${localhost}${port}`);
 });
